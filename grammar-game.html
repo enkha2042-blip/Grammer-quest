@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Quest 🎮</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0a1a;--panel:#11112a;--border:#2a2a6a;--accent1:#00e5ff;--accent2:#ff4081;--accent3:#69ff47;--gold:#ffd700;--text:#e0e0ff;--muted:#7070aa;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(0,229,255,0.06),transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(255,64,129,0.06),transparent 60%);pointer-events:none;}
+
+  .screen{width:100%;max-width:500px;display:none;}
+  .screen.active{display:flex;flex-direction:column;align-items:center;}
+
+  h1{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,5vw,2rem);font-weight:900;text-align:center;background:linear-gradient(90deg,var(--accent1),var(--accent2),var(--accent1));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite;margin-bottom:4px;letter-spacing:2px;}
+  @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+  .subtitle{color:var(--muted);font-size:0.72rem;letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:26px;}
+
+  /* NAME CARD */
+  .name-card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:26px 22px;width:100%;position:relative;overflow:hidden;margin-bottom:14px;}
+  .name-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent1),var(--accent2),var(--accent3));}
+  .name-label{font-size:0.68rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+  .name-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:1.1rem;padding:12px 16px;outline:none;transition:border-color 0.2s;}
+  .name-input:focus{border-color:var(--accent1);}
+  .name-input::placeholder{color:var(--muted);}
+  .start-btn{background:linear-gradient(135deg,var(--accent1),#0070ff);border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;padding:14px;cursor:pointer;width:100%;letter-spacing:2px;transition:all 0.2s;margin-top:14px;}
+  .start-btn:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,229,255,0.3);}
+
+  /* LEADERBOARD */
+  .lb-panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 18px;width:100%;margin-top:4px;}
+  .lb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .lb-title{font-family:'Orbitron',monospace;font-size:0.62rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+  .lb-live-dot{width:7px;height:7px;background:var(--accent3);border-radius:50%;animation:blink 1.2s ease-in-out infinite;flex-shrink:0;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  .reset-btn{background:rgba(255,64,129,0.15);border:1px solid var(--accent2);border-radius:8px;color:var(--accent2);font-size:0.6rem;font-family:'Orbitron',monospace;padding:4px 10px;cursor:pointer;letter-spacing:1px;}
+  .reset-btn:hover{background:rgba(255,64,129,0.3);}
+
+  .lb-row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .lb-row:last-child{border-bottom:none;}
+  .lb-row.me{background:rgba(0,229,255,0.08);}
+  .lb-rank{font-family:'Orbitron',monospace;font-size:0.78rem;width:26px;text-align:center;flex-shrink:0;}
+  .lb-name{flex:1;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lb-score{font-family:'Orbitron',monospace;font-size:0.85rem;color:var(--accent1);flex-shrink:0;}
+  .rank-1{color:var(--gold);}
+  .rank-2{color:#c0c0c0;}
+  .rank-3{color:#cd7f32;}
+  .lb-empty{color:var(--muted);font-size:0.85rem;text-align:center;padding:12px 0;}
+
+  /* HUD */
+  .hud{display:flex;justify-content:space-between;width:100%;margin-bottom:14px;gap:10px;}
+  .hud-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;flex:1;text-align:center;}
+  .hud-label{font-size:0.58rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+  .hud-val{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:700;}
+  .hud-val.score{color:var(--gold);}
+  .hud-val.lives{color:var(--accent2);}
+  .hud-val.combo{color:var(--accent3);}
+  .player-tag{font-family:'Orbitron',monospace;font-size:0.68rem;color:var(--accent1);letter-spacing:2px;margin-bottom:10px;text-align:center;width:100%;}
+
+  .prog-wrap{width:100%;background:var(--panel);border-radius:20px;height:8px;margin-bottom:12px;overflow:hidden;border:1px solid var(--border);}
+  .prog-bar{height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));border-radius:20px;transition:width 0.4s ease;}
+  .q-counter{font-size:0.68rem;color:var(--muted);letter-spacing:2px;text-align:center;margin-bottom:8px;font-family:'Orbitron',monospace;width:100%;}
+
+  /* CARD */
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px 20px 18px;width:100%;position:relative;overflow:hidden;margin-bottom:14px;}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent1),var(--accent2),var(--accent3));}
+  .tag{display:inline-block;font-size:0.58rem;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:12px;font-weight:600;}
+  .tag.active{background:rgba(0,229,255,0.15);color:var(--accent1);border:1px solid var(--accent1);}
+  .tag.passive{background:rgba(255,64,129,0.15);color:var(--accent2);border:1px solid var(--accent2);}
+  .tag.continuous{background:rgba(105,255,71,0.15);color:var(--accent3);border:1px solid var(--accent3);}
+  .tag.mixed{background:rgba(255,215,0,0.15);color:var(--gold);border:1px solid var(--gold);}
+  .q-text{font-size:1rem;line-height:1.65;margin-bottom:18px;}
+  .blank{display:inline-block;border-bottom:2px solid var(--accent1);min-width:80px;text-align:center;color:var(--accent1);font-weight:600;padding:0 4px;}
+
+  .options{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .opt-btn{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.85rem;padding:12px 10px;cursor:pointer;transition:all 0.2s;text-align:center;line-height:1.3;}
+  .opt-btn:hover:not(:disabled){border-color:var(--accent1);background:rgba(0,229,255,0.08);transform:translateY(-2px);}
+  .opt-btn.correct{border-color:var(--accent3);background:rgba(105,255,71,0.15);color:var(--accent3);animation:pop 0.35s ease;}
+  .opt-btn.wrong{border-color:var(--accent2);background:rgba(255,64,129,0.15);color:var(--accent2);animation:shake 0.4s ease;}
+  @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+  .feedback{background:var(--panel);border-radius:14px;padding:13px 16px;width:100%;margin-bottom:12px;border:1px solid var(--border);font-size:0.82rem;line-height:1.5;display:none;}
+  .feedback.show{display:block;animation:fadeUp 0.3s ease;}
+  .feedback.ok{border-color:var(--accent3);}
+  .feedback.no{border-color:var(--accent2);}
+  .fb-icon{font-size:1.1rem;margin-bottom:3px;}
+  .fb-title{font-weight:600;margin-bottom:3px;}
+  .fb-title.c{color:var(--accent3);}
+  .fb-title.w{color:var(--accent2);}
+  .fb-body{color:#aaaacc;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  .next-btn{background:linear-gradient(135deg,var(--accent1),#0070ff);border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;font-size:0.8rem;font-weight:700;padding:13px;cursor:pointer;width:100%;letter-spacing:2px;transition:all 0.2s;display:none;}
+  .next-btn.show{display:block;animation:fadeUp 0.3s ease;}
+  .next-btn:hover{opacity:0.9;transform:translateY(-2px);}
+
+  /* END */
+  .trophy{font-size:3.5rem;margin-bottom:10px;}
+  .end-title{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;margin-bottom:6px;color:var(--gold);}
+  .end-player{color:var(--accent1);font-size:1rem;margin-bottom:10px;letter-spacing:1px;}
+  .end-score{font-family:'Orbitron',monospace;font-size:2.2rem;font-weight:700;color:var(--accent1);margin-bottom:4px;}
+  .stars{font-size:1.8rem;margin-bottom:16px;letter-spacing:4px;}
+  .action-btns{display:flex;gap:10px;width:100%;margin-top:4px;}
+  .btn-retry{background:linear-gradient(135deg,var(--accent2),#ff007a);border:none;border-radius:12px;color:#fff;font-family:'Orbitron',monospace;font-size:0.72rem;font-weight:700;padding:13px;cursor:pointer;flex:1;letter-spacing:1px;transition:all 0.2s;}
+  .btn-retry:hover{opacity:0.9;transform:translateY(-2px);}
+  .btn-new{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Orbitron',monospace;font-size:0.72rem;font-weight:700;padding:13px;cursor:pointer;flex:1;letter-spacing:1px;transition:all 0.2s;}
+  .btn-new:hover{border-color:var(--accent1);background:rgba(0,229,255,0.08);}
+
+  .combo-flash{position:fixed;top:28%;left:50%;transform:translateX(-50%);font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:900;color:var(--gold);pointer-events:none;animation:comboAnim 1s ease forwards;z-index:999;text-shadow:0 0 20px var(--gold);}
+  @keyframes comboAnim{0%{opacity:1;transform:translateX(-50%) scale(0.8)}50%{opacity:1;transform:translateX(-50%) scale(1.3)}100%{opacity:0;transform:translateX(-50%) translateY(-50px) scale(1)}}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: NAME -->
+<div class="screen active" id="s-name">
+  <h1>GRAMMAR QUEST</h1>
+  <p class="subtitle">Present Tenses · Class Edition</p>
+  <div class="name-card">
+    <div class="name-label">Өөрийн нэрээ оруул</div>
+    <input class="name-input" id="name-input" type="text" placeholder="Жишээ: Болд" maxlength="20"/>
+    <button class="start-btn" onclick="startGame()">▶ ТОГЛООМ ЭХЛЭХ</button>
+  </div>
+  <div class="lb-panel">
+    <div class="lb-header">
+      <div class="lb-title"><span class="lb-live-dot"></span>🏆 АНГИЙН LEADERBOARD</div>
+      <button class="reset-btn" onclick="resetLB()">🗑 RESET</button>
+    </div>
+    <div id="lb-home"></div>
+  </div>
+</div>
+
+<!-- SCREEN 2: GAME -->
+<div class="screen" id="s-game">
+  <h1>GRAMMAR QUEST</h1>
+  <div class="player-tag" id="player-tag">👤 —</div>
+  <div class="hud">
+    <div class="hud-box"><div class="hud-label">Score</div><div class="hud-val score" id="hud-score">0</div></div>
+    <div class="hud-box"><div class="hud-label">Lives</div><div class="hud-val lives" id="hud-lives">❤️❤️❤️</div></div>
+    <div class="hud-box"><div class="hud-label">Combo</div><div class="hud-val combo" id="hud-combo">x1</div></div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog" style="width:0%"></div></div>
+  <div class="q-counter" id="q-num">Question 1 / 12</div>
+  <div class="card">
+    <div id="tag-area"></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+  </div>
+  <div class="feedback" id="feedback">
+    <div class="fb-icon" id="fb-icon"></div>
+    <div class="fb-title" id="fb-title"></div>
+    <div class="fb-body" id="fb-body"></div>
+  </div>
+  <button class="next-btn" id="next-btn" onclick="nextQ()">NEXT →</button>
+</div>
+
+<!-- SCREEN 3: END -->
+<div class="screen" id="s-end">
+  <h1>GRAMMAR QUEST</h1>
+  <div class="trophy" id="e-trophy">🏆</div>
+  <div class="end-title">MISSION COMPLETE!</div>
+  <div class="end-player" id="e-player"></div>
+  <div class="end-score" id="e-score">0 pts</div>
+  <div class="stars" id="e-stars"></div>
+  <div class="lb-panel" style="margin-bottom:14px;">
+    <div class="lb-header">
+      <div class="lb-title"><span class="lb-live-dot"></span>🏆 АНГИЙН LEADERBOARD</div>
+    </div>
+    <div id="lb-end"></div>
+  </div>
+  <div class="action-btns">
+    <button class="btn-retry" onclick="retry()">🔄 Дахин тоглох</button>
+    <button class="btn-new" onclick="goHome()">👤 Шинэ тоглогч</button>
+  </div>
+</div>
+
+<script>
+const QS=[
+  {tag:"Present Simple Active",tc:"active",text:"She _____ English every day. (study)",opts:["studies","is studying","is studied","are studied"],ans:0,exp:"He/She/It дээр -s/-es нэмнэ → 'studies'."},
+  {tag:"Present Simple Passive",tc:"passive",text:"The cashmere coat _____ in Mongolia.",opts:["make","is making","is made","are made"],ans:2,exp:"subject + is/are + past participle. Нэгж → 'is made'."},
+  {tag:"Present Continuous Active",tc:"continuous",text:"I _____ the cups right now.",opts:["wash","am washing","is washed","are washing"],ans:1,exp:"I + am + verb-ing → 'am washing'."},
+  {tag:"Present Continuous Passive",tc:"mixed",text:"The designs _____ right now.",opts:["develop","are developed","are being developed","is being developed"],ans:2,exp:"are + being + past participle → 'are being developed'."},
+  {tag:"Present Simple Active",tc:"active",text:"They _____ in a town. (live)",opts:["lives","is living","live","are lived"],ans:2,exp:"They/You/We + verb (үндсэн хэлбэр) → 'live'."},
+  {tag:"Present Simple Passive",tc:"passive",text:"Bees _____ with sugar.",opts:["fed","is fed","are fed","are feeding"],ans:2,exp:"'Bees' = олон → are + past participle → 'are fed'."},
+  {tag:"Present Continuous Active",tc:"continuous",text:"The cost of living _____ every year.",opts:["rise","rises","is rising","is risen"],ans:2,exp:"Одоогийн үйл явц → 'is rising'."},
+  {tag:"Present Continuous Passive",tc:"mixed",text:"The research _____ in the laboratory.",opts:["is doing","is done","is being done","are being done"],ans:2,exp:"Нэгж → is + being + past participle → 'is being done'."},
+  {tag:"Choose the Tense",tc:"mixed",text:"A number of bicycles _____ every year. (steal — unknown doer)",opts:["steal","are stealing","are stolen","are being stolen"],ans:2,exp:"Хэн хийснийг мэдэхгүй + жил бүр = Present Simple Passive → 'are stolen'."},
+  {tag:"Present Simple Active",tc:"active",text:"He _____ not know the answer.",opts:["do","does","is","are"],ans:1,exp:"He/She/It: does not → 'does not know'."},
+  {tag:"Present Continuous Active",tc:"continuous",text:"They _____ a new project this week. (develop)",opts:["develop","is developing","are developing","are developed"],ans:2,exp:"They + are + verb-ing → 'are developing'."},
+  {tag:"Choose the Tense",tc:"mixed",text:"The new shopping centre _____ tomorrow. (open — formal news)",opts:["opens","is opening","will be opened","is being opened"],ans:2,exp:"Хэвлэлд Passive Future: will be + past participle → 'will be opened'."},
+];
+
+const LB_KEY="gq_lb_v3";
+let playerName='',score=0,lives=3,combo=1,answered=false,cur=0,deck=[];
+
+// ── LocalStorage LB ──
+function lbLoad(){try{return JSON.parse(localStorage.getItem(LB_KEY))||[];}catch(e){return[];}}
+function lbSave(lb){localStorage.setItem(LB_KEY,JSON.stringify(lb));}
+
+function lbUpdate(name,pts){
+  let lb=lbLoad();
+  const ex=lb.find(e=>e.name.toLowerCase()===name.toLowerCase());
+  if(ex){if(pts>ex.score)ex.score=pts;}
+  else lb.push({name,score:pts});
+  lb.sort((a,b)=>b.score-a.score);
+  lbSave(lb);return lb;
+}
+
+function renderLB(id,myName){
+  const lb=lbLoad();
+  const el=document.getElementById(id);
+  if(!lb.length){el.innerHTML='<div class="lb-empty">Одоогоор бичилт алга</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  el.innerHTML=lb.slice(0,20).map((e,i)=>{
+    const isMe=myName&&e.name.toLowerCase()===myName.toLowerCase();
+    return `<div class="lb-row${isMe?' me':''}">
+      <span class="lb-rank rank-${i+1}">${medals[i]||(i+1)}</span>
+      <span class="lb-name">${e.name}${isMe?' 👈':''}</span>
+      <span class="lb-score">${e.score}<small style="font-size:0.6rem;color:var(--muted)"> pts</small></span>
+    </div>`;
+  }).join('');
+}
+
+function resetLB(){
+  if(!confirm('Leaderboard-ийг устгах уу?'))return;
+  localStorage.removeItem(LB_KEY);
+  renderLB('lb-home','');
+}
+
+// ── Screens ──
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── Game ──
+function startGame(){
+  const v=document.getElementById('name-input').value.trim();
+  if(!v){document.getElementById('name-input').focus();return;}
+  playerName=v;score=0;lives=3;combo=1;answered=false;cur=0;
+  deck=[...QS].sort(()=>Math.random()-0.5);
+  document.getElementById('player-tag').textContent='👤 '+playerName;
+  updateHUD();renderQ();show('s-game');
+}
+document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')startGame();});
+
+function updateHUD(){
+  document.getElementById('hud-score').textContent=score;
+  document.getElementById('hud-lives').textContent='❤️'.repeat(Math.max(lives,0))+'🖤'.repeat(Math.max(3-lives,0));
+  document.getElementById('hud-combo').textContent='x'+combo;
+}
+
+function renderQ(){
+  answered=false;
+  const q=deck[cur];
+  document.getElementById('q-num').textContent=`Question ${cur+1} / ${deck.length}`;
+  document.getElementById('prog').style.width=(cur/deck.length*100)+'%';
+  document.getElementById('tag-area').innerHTML=`<span class="tag ${q.tc}">${q.tag}</span>`;
+  document.getElementById('q-text').innerHTML=q.text.replace('_____','<span class="blank">_____</span>');
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt-btn';b.textContent=o;b.onclick=()=>pick(i,b);opts.appendChild(b);
+  });
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('next-btn').classList.remove('show');
+}
+
+function pick(idx,btn){
+  if(answered)return;answered=true;
+  const q=deck[cur];
+  const all=document.querySelectorAll('.opt-btn');
+  all.forEach(b=>b.disabled=true);
+  all[q.ans].classList.add('correct');
+  if(idx===q.ans){
+    const pts=10*combo;score+=pts;combo++;
+    if(combo>2)comboFlash();
+    showFB(true,q.exp,pts);
+  }else{
+    btn.classList.add('wrong');lives--;combo=1;
+    showFB(false,q.exp,0);
+    if(lives<=0){updateHUD();setTimeout(endGame,1300);return;}
+  }
+  updateHUD();
+  document.getElementById('next-btn').classList.add('show');
+}
+
+function showFB(ok,exp,pts){
+  const fb=document.getElementById('feedback');
+  document.getElementById('fb-icon').textContent=ok?'✅':'❌';
+  const t=document.getElementById('fb-title');
+  t.className='fb-title '+(ok?'c':'w');
+  t.textContent=ok?`+${pts} pts — Гайхалтай!`:'Буруу — Дахин анхаар!';
+  document.getElementById('fb-body').textContent=exp;
+  fb.className='feedback show '+(ok?'ok':'no');
+}
+
+function comboFlash(){
+  const el=document.createElement('div');
+  el.className='combo-flash';el.textContent=`COMBO x${combo}!`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1000);
+}
+
+function nextQ(){
+  cur++;
+  if(cur>=deck.length||lives<=0)endGame();else renderQ();
+}
+
+function endGame(){
+  lbUpdate(playerName,score);
+  document.getElementById('prog').style.width='100%';
+  const trophy=score>=180?'🏆':score>=100?'🥈':'🥉';
+  const stars=score>=180?'⭐⭐⭐':score>=100?'⭐⭐':'⭐';
+  document.getElementById('e-trophy').textContent=trophy;
+  document.getElementById('e-player').textContent='👤 '+playerName;
+  document.getElementById('e-score').textContent=score+' pts';
+  document.getElementById('e-stars').textContent=stars;
+  renderLB('lb-end',playerName);
+  show('s-end');
+}
+
+function retry(){
+  score=0;lives=3;combo=1;answered=false;cur=0;
+  deck=[...QS].sort(()=>Math.random()-0.5);
+  updateHUD();renderQ();show('s-game');
+}
+
+function goHome(){
+  document.getElementById('name-input').value='';
+  renderLB('lb-home','');
+  show('s-name');
+}
+
+renderLB('lb-home','');
+</script>
+</body>
+</html>
